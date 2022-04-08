@@ -26,5 +26,5 @@ Para executar os Jupyter Notebooks deste repositório é necessário ter o [Spar
 ├── notebooks
 │   ├── 1_quality.ipynb          <- Contém apontamentos de dados inconsistêntes.
 │   ├── 2_transformation.ipynb   <- Contem tratamentos dos dados.
-│   ├── 3_report.ipynb           <- Contém respostas de negócio baseadas em dados.
+│   ├── 3_reports.ipynb           <- Contém respostas de negócio baseadas em dados.
 ```
