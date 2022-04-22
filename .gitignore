@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Parquet files
+*.parquet/
+
+*.pyc
+*.txt
+*.pdf
+*.zip
