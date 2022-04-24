@@ -135,3 +135,6 @@ dmypy.json
 *.txt
 *.pdf
 *.zip
+*.xml
+*.iml
+.idea
