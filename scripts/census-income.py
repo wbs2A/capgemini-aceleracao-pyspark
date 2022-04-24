@@ -2,6 +2,9 @@ from pyspark import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType
+from pyspark.sql.utils import AnalysisException
+
+from great_expectations.dataset import SparkDFDataset
 
 
 def show_references():
@@ -241,6 +244,57 @@ def solve_questions(dataframe, method_name, _method):
     _method(dataframe)
 
 
+def quality_ensure(dataframe):
+    mandatory_columns = [
+        'age',
+        'workclass',
+        'fnlwgt',
+        'education',
+        'education-num',
+        'marital-status',
+        'occupation',
+        'relationship',
+        'race',
+        'sex',
+        'capital-gain',
+        'capital-loss',
+        'hours-per-week',
+        'native-country',
+        'income'
+    ]
+    raw_test_df = SparkDFDataset(dataframe)
+
+    print('-' * 10, 'Check if all columns exists', '-' * 10)
+    for column in mandatory_columns:
+        try:
+            assert raw_test_df.expect_column_to_exist(
+                column).success, f"Mandatory column {column} does not exist: FAILED"
+            print(f"Column {column} exists: PASSED")
+        except AssertionError as e:
+            print(e)
+    print('-' * 47)
+
+    print('-' * 10, 'Check for null values', '-' * 10)
+    for column in mandatory_columns:
+        test_for_null_results = raw_test_df.expect_column_values_to_not_be_null(column)
+        test_for_question_marks = raw_test_df.expect_column_values_to_not_match_regex(column, "(\?)")
+
+        try:
+            assert test_for_null_results.success, \
+                f"look: {test_for_null_results.result['unexpected_count']} of"\
+                f"{test_for_null_results.result['element_count']} items in " \
+                f"column {column} are null: FAILED "
+            assert test_for_question_marks.success, \
+                f"look: {test_for_question_marks.result['unexpected_count']} records equals to ? were found, " \
+                f"wich represents {test_for_question_marks.result['unexpected_percent']:.1f}% of the total"
+            print('All values are not null: PASSED')
+        except AssertionError as e:
+            print(e)
+        except AnalysisException as e:
+            print(e)
+    print('-' * 41)
+
+
 if __name__ == "__main__":
     sc = SparkContext()
     spark = (SparkSession.builder.appName("Aceleração PySpark - Capgemini [Census Income]"))
@@ -273,6 +327,8 @@ if __name__ == "__main__":
 
     df.show(10)
 
+    quality_ensure(df)
+
     online_retail_questions = {
         "question1": question1,
         "question2": question2,
@@ -294,5 +350,7 @@ if __name__ == "__main__":
     for i, (_name, _method) in enumerate(online_retail_questions.items()):
         print("Questão", i + 1)
         _method(df)
+
     print('-' * 15, 'end of tasks', '-' * 15)
+
     show_references()
